@@ -24,3 +24,13 @@ ls -l /dev/input/by-id/
 On a Pi with an F310 plugged in, you should see something like:
 
 usb-Logitech_Gamepad_F310-event-joystick -> ../event3
+
+
+
+### entering the venv 
+
+# Create the virtual environment
+python3 -m venv venv
+
+# Activate it
+source venv/bin/activate

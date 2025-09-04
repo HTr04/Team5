@@ -14,3 +14,13 @@
 4. Change your remote URL to SSH:
 
 ```git remote set-url origin git@github.com:colin-szeto/monkey_bot.git```
+
+
+### Detecting the usb gamepad
+1. List all input devices
+ls -l /dev/input/by-id/
+
+
+On a Pi with an F310 plugged in, you should see something like:
+
+usb-Logitech_Gamepad_F310-event-joystick -> ../event3

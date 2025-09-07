@@ -1,10 +1,10 @@
 // Motor 1 (Right motor?)
-const int M1_RPWM = 2;
-const int M1_LPWM = 3;
+const int M1_RPWM = 3;
+const int M1_LPWM = 5;
 
 // Motor 2 (Left motor?)
-const int M2_RPWM = 4;
-const int M2_LPWM = 5;
+const int M2_RPWM = 6;
+const int M2_LPWM = 9;
 
 void setup() {
   Serial.begin(9600);
@@ -34,7 +34,7 @@ void loop() {
     int m2Val = input.substring(commaIndex + 1).toInt();
 
     // Drive motors
-    setBTS7960(M1_RPWM, M1_LPWM, -1*m1Val); // reversing the right side so 255 corresponds with moving forward
+    setBTS7960(M1_RPWM, M1_LPWM, 1*m1Val); // reversing the right side so 255 corresponds with moving forward
     setBTS7960(M2_RPWM, M2_LPWM, m2Val);
 
     Serial.print("M1: "); Serial.print(m1Val);

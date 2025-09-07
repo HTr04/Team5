@@ -68,6 +68,11 @@ try:
         elif event.type == ecodes.EV_KEY and event.code in button_map:
             state = "Pressed" if event.value else "Released"
             print(f"{button_map[event.code]} {state}")
+        
+            # Emergency stop on "A" button press
+            if button == "A" and state == "Pressed":
+                m1_val, m2_val = 0, 0
+                send_to_arduino(m1_val, m2_val)
 
 except KeyboardInterrupt:
     print("\nExiting...")

@@ -3,7 +3,7 @@ import serial
 import time
 
 # Open gamepad
-device_path = '/dev/input/by-id/usb-Logitech_Gamepad_F310_B92AFE6C-event-joystick'
+device_path = '/dev/input/by-id/usb-Logitech_Gamepad_F310_DE247C20-event-joystick'
 gamepad = InputDevice(device_path)
 
 # Open Arduino serial
@@ -38,6 +38,7 @@ print(f"Listening on {gamepad.path} ({gamepad.name})")
 # Store current motor values
 m1_val = 0
 m2_val = 0
+button = ""
 prev_cmd = None  # prevent flooding
 
 def map_axis(val, deadzone=4000):
@@ -73,6 +74,10 @@ try:
             if button == "A" and state == "Pressed":
                 m1_val, m2_val = 0, 0
                 send_to_arduino(m1_val, m2_val)
+
+	    if button == "Y" and state == "Pressed":
+		m1_val, m2_val = 0, 0
+		send_to_arduino(m1_val, m2_val)
 
 except KeyboardInterrupt:
     print("\nExiting...")

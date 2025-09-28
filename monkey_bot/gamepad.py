@@ -74,11 +74,7 @@ try:
             if button == "A" and state == "Pressed":
                 m1_val, m2_val = 0, 0
                 send_to_arduino(m1_val, m2_val)
-
-	    if button == "Y" and state == "Pressed":
-		m1_val, m2_val = 0, 0
-		send_to_arduino(m1_val, m2_val)
-
+          
 except KeyboardInterrupt:
     print("\nExiting...")
 

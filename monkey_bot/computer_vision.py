@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-# Open webcam (try 0 or 1 depending on your setup)
+# Open webcam
 cap = cv2.VideoCapture(0)
 
 while True:
@@ -12,7 +12,7 @@ while True:
     # Convert to HSV
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-    # Red color range (covers both ends of HSV spectrum)
+    # Red color range
     lower_red1 = np.array([0, 120, 70])
     upper_red1 = np.array([10, 255, 255])
     lower_red2 = np.array([170, 120, 70])
@@ -22,19 +22,24 @@ while True:
     mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
     mask = mask1 + mask2
 
-    # Find contours of red regions
+    # Find contours
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     if contours:
-        # Pick the largest red object
+        # Largest red object
         c = max(contours, key=cv2.contourArea)
         (x, y), radius = cv2.minEnclosingCircle(c)
 
-        if radius > 10:  # only draw if big enough
+        if radius > 10:  # only track if big enough
             center = (int(x), int(y))
             radius = int(radius)
-            cv2.circle(frame, center, radius, (0, 255, 0), 2)  # green circle outline
-            cv2.circle(frame, center, 5, (0, 255, 0), -1)      # small filled center
+
+            # Draw green circle + center
+            cv2.circle(frame, center, radius, (0, 255, 0), 2)
+            cv2.circle(frame, center, 5, (0, 255, 0), -1)
+
+            # Print x-axis position
+            print("X-axis:", int(x))
 
     cv2.imshow("Red Tracking", frame)
     cv2.imshow("Mask", mask)

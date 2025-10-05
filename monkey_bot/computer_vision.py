@@ -3,7 +3,7 @@ import numpy as np
 
 # Open webcam
 cap = cv2.VideoCapture(0)
-
+print("test")
 while True:
     ret, frame = cap.read()
     if not ret:

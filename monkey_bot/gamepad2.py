@@ -23,8 +23,8 @@ axis_map = {
 button_map = {
     ecodes.BTN_SOUTH: "A",
     ecodes.BTN_EAST: "B",
-    ecodes.BTN_NORTH: "Y",
-    ecodes.BTN_WEST: "X",
+    ecodes.BTN_NORTH: "X",
+    ecodes.BTN_WEST: "Y",
     ecodes.BTN_TL: "LB",
     ecodes.BTN_TR: "RB",
     ecodes.BTN_SELECT: "BACK",
@@ -69,12 +69,22 @@ try:
         elif event.type == ecodes.EV_KEY and event.code in button_map:
             state = "Pressed" if event.value else "Released"
             print(f"{button_map[event.code]} {state}")
-        
+
             # Emergency stop on "A" button press
             if button == "A" and state == "Pressed":
-                m1_val, m2_val = 0, 0
-                send_to_arduino(m1_val, m2_val)
-          
+                m1_val,m2_val = 0,0
+                send_to_arduino(m1_val,m2_val)
+                print(f"Motor1={m1_val}, Motor2={m2_val}")
+
+            elif button == "Y" and state == "Pressed":
+                m1_val,m2_val = 255,255
+                arduino.write(m1_val, m2_val)
+                time.sleep(3)
+                m1_val,m2_val = 0,0
+                arduino.write(m1_val,m2_val)
+            else:
+                print("none")
+
 except KeyboardInterrupt:
     print("\nExiting...")
 

@@ -178,7 +178,14 @@ def process_frame_from_encoder(encoder_packet):
 
 _, args = initialize_argparser()
 
-visualizer = dai.RemoteConnection(httpPort=8082)
+# Headless by default (no windows/visualizer) unless explicitly debugging
+debug_viz = getattr(args, "debug_viz", False)
+if debug_viz:
+    visualizer = dai.RemoteConnection(httpPort=8082)
+    print("[INFO] Debug visualization ENABLED: windows and remote stream may open.")
+else:
+    visualizer = None
+    print("[INFO] Headless mode: no GUI windows, SSH-friendly logs only.")
 device = dai.Device(dai.DeviceInfo(args.device)) if args.device else dai.Device()
 print("Device Information: ", device.getDeviceInfo())
 
@@ -186,14 +193,15 @@ cam_features = {}
 for cam in device.getConnectedCameraFeatures():
     cam_features[cam.socket] = (cam.width, cam.height)
 
-# Create a window for HSV tuning (optional)
-cv2.namedWindow('HSV Tuning')
-cv2.createTrackbar('H Min', 'HSV Tuning', 0, 180, lambda x: None)
-cv2.createTrackbar('H Max', 'HSV Tuning', 10, 180, lambda x: None)
-cv2.createTrackbar('S Min', 'HSV Tuning', 120, 255, lambda x: None)
-cv2.createTrackbar('S Max', 'HSV Tuning', 255, 255, lambda x: None)
-cv2.createTrackbar('V Min', 'HSV Tuning', 70, 255, lambda x: None)
-cv2.createTrackbar('V Max', 'HSV Tuning', 255, 255, lambda x: None)
+# Create HSV tuning UI only when debugging locally
+if debug_viz:
+    cv2.namedWindow('HSV Tuning')
+    cv2.createTrackbar('H Min', 'HSV Tuning', 0, 180, lambda x: None)
+    cv2.createTrackbar('H Max', 'HSV Tuning', 10, 180, lambda x: None)
+    cv2.createTrackbar('S Min', 'HSV Tuning', 120, 255, lambda x: None)
+    cv2.createTrackbar('S Max', 'HSV Tuning', 255, 255, lambda x: None)
+    cv2.createTrackbar('V Min', 'HSV Tuning', 70, 255, lambda x: None)
+    cv2.createTrackbar('V Max', 'HSV Tuning', 255, 255, lambda x: None)
 
 with dai.Pipeline(device) as pipeline:
     print("Creating pipeline...")
@@ -218,18 +226,19 @@ with dai.Pipeline(device) as pipeline:
                 request_resolution, dai.ImgFrame.Type.BGR888p, fps=args.fps_limit
             )
         
-        # Create NV12 output for encoder (original functionality)
-        cam_out = cam.requestOutput(
-            request_resolution, dai.ImgFrame.Type.NV12, fps=args.fps_limit
-        )
+        # Create NV12 output and encoder only when visualizing remotely
+        if debug_viz:
+            cam_out = cam.requestOutput(
+                request_resolution, dai.ImgFrame.Type.NV12, fps=args.fps_limit
+            )
 
-        encoder = pipeline.create(dai.node.VideoEncoder)
-        encoder.setDefaultProfilePreset(
-            args.fps_limit, dai.VideoEncoderProperties.Profile.H264_MAIN
-        )
-        cam_out.link(encoder.input)
+            encoder = pipeline.create(dai.node.VideoEncoder)
+            encoder.setDefaultProfilePreset(
+                args.fps_limit, dai.VideoEncoderProperties.Profile.H264_MAIN
+            )
+            cam_out.link(encoder.input)
 
-        visualizer.addTopic(sensor.socket.name, encoder.out, "images")
+            visualizer.addTopic(sensor.socket.name, encoder.out, "images")
 
     # Get the output queue for color detection BEFORE starting the pipeline
     color_queue = None
@@ -240,10 +249,15 @@ with dai.Pipeline(device) as pipeline:
     print("Pipeline created.")
 
     pipeline.start()
-    visualizer.registerPipeline(pipeline)
+    if debug_viz and visualizer is not None:
+        visualizer.registerPipeline(pipeline)
     
-    print("Starting color detection. Press 'q' to quit, 's' to save screenshot")
+    print("Starting color detection. Headless=" + ("False" if debug_viz else "True") + 
+        ". Press Ctrl+C to quit." + (" Use 'q' in window/remote to exit." if debug_viz else ""))
     screenshot_counter = 0
+    last_fps_log = cv2.getTickCount()
+    frames = 0
+    last_steer = None
     
     while pipeline.isRunning():
         # Process frames for color detection if we have a queue
@@ -256,7 +270,7 @@ with dai.Pipeline(device) as pipeline:
                 # Apply color detection and get steering value
                 processed_frame, steering_value = detect_colors_hsv(frame)
                 
-                # Print steering value to terminal
+                # Print steering value to terminal (SSH-friendly)
                 if steering_value is not None:
                     # Determine direction
                     if abs(steering_value) < 0.05:
@@ -265,29 +279,45 @@ with dai.Pipeline(device) as pipeline:
                         direction = "LEFT"
                     else:
                         direction = "RIGHT"
-                    
-                    print(f"Steering Value: {steering_value:+.3f} | Direction: {direction}")
+                    print(f"[STEER] value={steering_value:+.3f} dir={direction}")
+                    last_steer = (steering_value, direction)
                 else:
-                    print("Steering Value: N/A (both objects not detected)")
-                
-                # Display the processed frame locally
-                cv2.imshow('Color Detection - Red/Blue', processed_frame)
-                
-                # Handle keyboard input
-                local_key = cv2.waitKey(1) & 0xFF
-                if local_key == ord('s'):
-                    filename = f'color_detection_{screenshot_counter:04d}.png'
-                    cv2.imwrite(filename, processed_frame)
-                    print(f"Screenshot saved as {filename}")
-                    screenshot_counter += 1
-                elif local_key == ord('q'):
-                    break
-        
-        # Check for remote visualizer key press
-        key = visualizer.waitKey(1)
-        if key == ord("q"):
-            print("Got q key from the remote connection!")
-            break
+                    print("[STEER] N/A (both objects not detected)")
 
-cv2.destroyAllWindows()
+                # Optional GUI only in debug mode
+                if debug_viz:
+                    # Display the processed frame locally
+                    cv2.imshow('Color Detection - Red/Blue', processed_frame)
+                    # Handle keyboard input
+                    local_key = cv2.waitKey(1) & 0xFF
+                    if local_key == ord('s'):
+                        filename = f'color_detection_{screenshot_counter:04d}.png'
+                        cv2.imwrite(filename, processed_frame)
+                        print(f"Screenshot saved as {filename}")
+                        screenshot_counter += 1
+                    elif local_key == ord('q'):
+                        break
+
+                # Periodic FPS/status log for SSH sessions
+                frames += 1
+                tick_now = cv2.getTickCount()
+                elapsed = (tick_now - last_fps_log) / cv2.getTickFrequency()
+                if elapsed >= 1.0:
+                    fps = frames / elapsed
+                    if last_steer is not None:
+                        sv, dr = last_steer
+                        print(f"[STATUS] fps={fps:.1f} | steer={sv:+.3f} ({dr})")
+                    else:
+                        print(f"[STATUS] fps={fps:.1f} | steer=N/A")
+                    frames = 0
+                    last_fps_log = tick_now
+        
+        # Check for remote visualizer key press only in debug mode
+        if debug_viz and visualizer is not None:
+            key = visualizer.waitKey(1)
+            if key == ord("q"):
+                print("Got q key from the remote connection!")
+                break
+if debug_viz:
+    cv2.destroyAllWindows()
 print("Color detection stopped.")

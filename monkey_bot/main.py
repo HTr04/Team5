@@ -21,7 +21,7 @@ import math
 import serial
 from utils.arguments import initialize_argparser
 
-def detect_colors_hsv(frame, draw=True):
+def detect_colors_hsv(frame, draw=False):
     """
     Detect red and blue colors in the frame using HSV color space
     Returns the frame with outlines drawn around detected colors and the steering value
@@ -173,6 +173,8 @@ def clamp(val, lo, hi):
 
 _, args = initialize_argparser()
 
+print("[INFO] Headless mode: no GUI windows, SSH-friendly logs only.")
+
 device = dai.Device(dai.DeviceInfo(args.device)) if args.device else dai.Device()
 print("Device Information: ", device.getDeviceInfo())
 
@@ -249,6 +251,7 @@ with dai.Pipeline(device) as pipeline:
         try:
             cmd = f"{m1},{m2}\n"
             ser.write(cmd.encode())
+            print(f"[CMD] m1={m1:+d}, m2={m2:+d}")
         except Exception as e:
             # If serial fails mid-run, just log once-per error burst
             print(f"Serial write error: {e}")
@@ -256,6 +259,10 @@ with dai.Pipeline(device) as pipeline:
     # Main loop
     pipeline.start()
     print("Starting headless color-based centering. Press Ctrl+C to stop.")
+
+    frames = 0
+    last_fps_log = cv2.getTickCount()
+    last_steer = None
 
     last_send = 0.0
     send_interval = 1.0 / max(1, args.command_rate_hz)
@@ -273,12 +280,36 @@ with dai.Pipeline(device) as pipeline:
                 continue
 
             frame = in_frame.getCvFrame()
-            _, steering_value = detect_colors_hsv(frame, draw=args.debug_viz)
+            _, steering_value = detect_colors_hsv(frame, draw=False)
+
+            # Print steering info (SSH-friendly)
+            if steering_value is not None:
+                direction = (
+                    "CENTERED" if abs(steering_value) < 0.05 else ("LEFT" if steering_value < 0 else "RIGHT")
+                )
+                print(f"[STEER] value={steering_value:+.3f} dir={direction}")
+                last_steer = (steering_value, direction)
+            else:
+                print("[STEER] N/A (both objects not detected)")
 
             now = time.time()
             if now - last_send >= send_interval:
                 send_turn_command(steering_value)
                 last_send = now
+
+            # Periodic FPS/status log
+            frames += 1
+            tick_now = cv2.getTickCount()
+            elapsed = (tick_now - last_fps_log) / cv2.getTickFrequency()
+            if elapsed >= 1.0:
+                fps = frames / elapsed
+                if last_steer is not None:
+                    sv, dr = last_steer
+                    print(f"[STATUS] fps={fps:.1f} | steer={sv:+.3f} ({dr})")
+                else:
+                    print(f"[STATUS] fps={fps:.1f} | steer=N/A")
+                frames = 0
+                last_fps_log = tick_now
 
     except KeyboardInterrupt:
         print("\nStopping...")

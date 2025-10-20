@@ -229,16 +229,20 @@ with dai.Pipeline(device) as pipeline:
         - Behavior: left/right wheels spin opposite directions to rotate in place.
         """
         if ser is None:
+            print("[CMD] skipped (no serial port open)")
             return
 
+        reason = ""
         if steering is None:
             m1 = 0
             m2 = 0
+            reason = "no-detections -> stop"
         else:
             s = -steering if args.invert_turn else steering
             if abs(s) < args.deadzone:
                 m1 = 0
                 m2 = 0
+                reason = "deadzone -> stop"
             else:
                 pwm = clamp(int(args.kp_turn * s), -args.max_turn_pwm, args.max_turn_pwm)
                 # rotate-in-place: opposite directions
@@ -247,11 +251,12 @@ with dai.Pipeline(device) as pipeline:
                 # Assuming m1 is right motor and inverted in Arduino (1*m1Val), we keep symmetry:
                 m1 = -pwm  # right motor
                 m2 = pwm   # left motor
+                reason = f"turn={'RIGHT' if s>0 else 'LEFT'} pwm={abs(pwm)}"
 
         try:
             cmd = f"{m1},{m2}\n"
             ser.write(cmd.encode())
-            print(f"[CMD] m1={m1:+d}, m2={m2:+d}")
+            print(f"[CMD] m1={m1:+d}, m2={m2:+d} | {reason}")
         except Exception as e:
             # If serial fails mid-run, just log once-per error burst
             print(f"Serial write error: {e}")

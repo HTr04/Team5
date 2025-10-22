@@ -100,3 +100,4 @@ finally:
     except Exception:
         pass
     print("Serial connection closed.");
+    print("test");

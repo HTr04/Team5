@@ -7,7 +7,7 @@ const int M2_RPWM = 6;
 const int M2_LPWM = 9;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   pinMode(M1_RPWM, OUTPUT);
   pinMode(M1_LPWM, OUTPUT);
@@ -16,6 +16,7 @@ void setup() {
 
   Serial.println("Enter motor values as: motor1,motor2");
   Serial.println("Example: 120,-100");
+  Serial.println("Test 9");
 }
 
 void loop() {
@@ -33,9 +34,18 @@ void loop() {
     int m1Val = input.substring(0, commaIndex).toInt();
     int m2Val = input.substring(commaIndex + 1).toInt();
 
-    // Drive motors
-    setBTS7960(M1_RPWM, M1_LPWM, 1*m1Val); // reversing the right side so 255 corresponds with moving forward
-    setBTS7960(M2_RPWM, M2_LPWM, m2Val);
+    // Enforce mutual exclusion: run only the motor with larger absolute value
+    if (abs(m1Val) >= abs(m2Val) && m1Val != 0) {
+      setBTS7960(M1_RPWM, M1_LPWM, m1Val);
+      setBTS7960(M2_RPWM, M2_LPWM, 0);  // stop the other motor
+    } else if (m2Val != 0) {
+      setBTS7960(M2_RPWM, M2_LPWM, m2Val);
+      setBTS7960(M1_RPWM, M1_LPWM, 0);  // stop the other motor
+    } else {
+      // If both are zero, stop both
+      setBTS7960(M1_RPWM, M1_LPWM, 0);
+      setBTS7960(M2_RPWM, M2_LPWM, 0);
+    }
 
     Serial.print("M1: "); Serial.print(m1Val);
     Serial.print(" | M2: "); Serial.println(m2Val);

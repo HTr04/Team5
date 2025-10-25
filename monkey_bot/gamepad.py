@@ -1,14 +1,43 @@
 # ...existing code...
 from evdev import InputDevice, ecodes
 import serial
+from serial.tools import list_ports
 import time
+import os
 
 # Open gamepad
 device_path = '/dev/input/by-id/usb-Logitech_Gamepad_F310_DE247C20-event-joystick'
 gamepad = InputDevice(device_path)
 
-# Open Arduino serial (normal baud)
-arduino = serial.Serial('/dev/ttyACM0', 9600, write_timeout=0)
+def find_arduino_port():
+    """Try to find a reasonable serial port for the Arduino.
+    Return device path string or None if not found.
+    """
+    # prefer common device paths if they exist
+    for p in ('/dev/ttyACM0', '/dev/ttyUSB0', '/dev/ttyAMA0'):
+        if os.path.exists(p):
+            return p
+
+    # fall back to scanning available ports
+    for com in list_ports.comports():
+        dev = com.device
+        descr = (com.description or '').lower()
+        if 'arduino' in descr or 'cdc' in descr or dev.startswith('/dev/ttyacm') or dev.startswith('/dev/ttyusb'):
+            return dev
+
+    # nothing found
+    return None
+
+
+# Open Arduino serial (normal baud) if available; otherwise run without Arduino
+_port = find_arduino_port()
+if _port:
+    try:
+        arduino = serial.Serial(_port, 9600, write_timeout=0)
+    except Exception:
+        arduino = None
+else:
+    arduino = None
 
 axis_map = {
     ecodes.ABS_X: "LEFT_X",
@@ -54,6 +83,9 @@ def try_send(m1, m2):
     global prev_cmd, last_send
     now = time.monotonic()
     cmd = f"{m1},{m2}\n"
+    if arduino is None:
+        return
+
     if cmd != prev_cmd and (now - last_send) >= SEND_PERIOD:
         try:
             arduino.write(cmd.encode('ascii'))

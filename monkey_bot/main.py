@@ -245,8 +245,12 @@ with dai.Pipeline(device) as pipeline:
                 m2 = 0
                 reason = "deadzone -> stop"
             else:
-                # turning component
-                pwm = clamp(int(args.kp_turn * s), -args.max_turn_pwm, args.max_turn_pwm)
+                # turning component (use round instead of truncating int)
+                pwm = round(args.kp_turn * s)
+                # enforce minimum torque once outside deadzone
+                if pwm != 0 and abs(pwm) < args.min_turn_pwm:
+                    pwm = args.min_turn_pwm if pwm > 0 else -args.min_turn_pwm
+                pwm = clamp(int(pwm), -args.max_turn_pwm, args.max_turn_pwm)
 
                 # small constant forward bias to always move slightly forward while turning
                 forward_bias = getattr(args, 'forward_bias', 30)

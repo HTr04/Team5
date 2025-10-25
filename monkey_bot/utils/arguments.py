@@ -59,6 +59,14 @@ def initialize_argparser():
     )
 
     parser.add_argument(
+        "--min_turn_pwm",
+        help="Minimum absolute PWM applied once outside the deadzone to overcome static friction.",
+        required=False,
+        default=40,
+        type=int,
+    )
+
+    parser.add_argument(
         "--deadzone",
         help="Deadzone around zero steering to avoid jitter (0..1).",
         required=False,
@@ -78,6 +86,14 @@ def initialize_argparser():
         "--invert_turn",
         help="Invert turning direction if the robot rotates the wrong way.",
         action="store_true",
+    )
+
+    parser.add_argument(
+        "--forward_bias",
+        help="Small constant forward PWM added during turns to keep slight forward motion.",
+        required=False,
+        default=30,
+        type=int,
     )
 
     parser.add_argument(

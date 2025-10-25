@@ -1,9 +1,9 @@
-from evdev import InputDevice, categorize, ecodes
+from evdev import InputDevice, ecodes
 import serial
 import time
 
 # Open gamepad
-device_path = '/dev/input/by-id/usb-Logitech_Gamepad_F310_B92AFE6C-event-joystick'
+device_path = '/dev/input/by-id/usb-Logitech_Gamepad_F310_DE247C20-event-joystick'
 gamepad = InputDevice(device_path)
 
 # Open Arduino serial
@@ -33,8 +33,6 @@ button_map = {
     ecodes.BTN_THUMBR: "RIGHT_STICK_PRESS",
 }
 
-print(f"Listening on {gamepad.path} ({gamepad.name})")
-
 # Store current motor values
 m1_val = 0
 m2_val = 0
@@ -61,22 +59,19 @@ try:
             if cmd != prev_cmd:
                 arduino.write(cmd.encode())
                 prev_cmd = cmd
-                print(f"Motor1={m1_val}, Motor2={m2_val}")
 
             time.sleep(0.02)  # throttle ~50 Hz
 
         elif event.type == ecodes.EV_KEY and event.code in button_map:
-            state = "Pressed" if event.value else "Released"
-            print(f"{button_map[event.code]} {state}")
-        
             # Emergency stop on "A" button press
-            if button == "A" and state == "Pressed":
+            if button_map[event.code] == "A" and event.value:
                 m1_val, m2_val = 0, 0
-                send_to_arduino(m1_val, m2_val)
+                cmd = f"{m1_val},{m2_val}\n"
+                arduino.write(cmd.encode())
+                prev_cmd = cmd
 
 except KeyboardInterrupt:
-    print("\nExiting...")
+    pass
 
 finally:
     arduino.close()
-    print("Serial connection closed.")

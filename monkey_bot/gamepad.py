@@ -8,7 +8,7 @@ device_path = '/dev/input/by-id/usb-Logitech_Gamepad_F310_B92AFE6C-event-joystic
 gamepad = InputDevice(device_path)
 
 # Open Arduino serial (faster baud + non-blocking write timeout)
-arduino = serial.Serial('/dev/ttyACM0', 115200, write_timeout=0)
+arduino = serial.Serial('/dev/ttyACM0', 96000, write_timeout=0)
 
 axis_map = {
     ecodes.ABS_X: "LEFT_X",

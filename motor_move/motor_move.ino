@@ -7,7 +7,7 @@ const int M2_RPWM = 6;
 const int M2_LPWM = 9;
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
 
   pinMode(M1_RPWM, OUTPUT);
   pinMode(M1_LPWM, OUTPUT);

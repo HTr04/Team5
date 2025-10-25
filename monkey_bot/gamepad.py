@@ -1,3 +1,4 @@
+# ...existing code...
 from evdev import InputDevice, ecodes
 import serial
 import time
@@ -32,8 +33,6 @@ button_map = {
     ecodes.BTN_THUMBL: "LEFT_STICK_PRESS",
     ecodes.BTN_THUMBR: "RIGHT_STICK_PRESS",
 }
-
-print(f"Listening on {gamepad.path} ({gamepad.name})")
 
 # Store current motor values
 m1_val = 0
@@ -75,16 +74,11 @@ try:
 
             try_send(m1_val, m2_val)
 
-            # Throttled print to avoid console bottleneck
-            now = time.monotonic()
-            if now - last_print >= PRINT_PERIOD:
-                print(f"Motor1={m1_val}, Motor2={m2_val}")
-                last_print = now
+            # Throttled printing removed to avoid any stdout activity
 
         elif event.type == ecodes.EV_KEY and event.code in button_map:
             state = "Pressed" if event.value else "Released"
             btn = button_map[event.code]
-            print(f"{btn} {state}")
 
             # Emergency stop on "A" button press
             if btn == "A" and state == "Pressed":
@@ -93,11 +87,10 @@ try:
                 try_send(0, 0)
 
 except KeyboardInterrupt:
-    print("\nExiting...")
+    pass
 finally:
     try:
         arduino.close()
     except Exception:
         pass
-    print("Serial connection closed.");
-    print("test");
+# ...existing code...

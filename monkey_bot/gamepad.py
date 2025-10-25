@@ -4,11 +4,11 @@ import serial
 import time
 
 # Open gamepad
-device_path = '/dev/input/by-id/usb-Logitech_Gamepad_F310_B92AFE6C-event-joystick'
+device_path = '/dev/input/by-id/usb-Logitech_Gamepad_F310_DE247C20-event-joystick'
 gamepad = InputDevice(device_path)
 
-# Open Arduino serial (faster baud + non-blocking write timeout)
-arduino = serial.Serial('/dev/ttyACM0', 96000, write_timeout=0)
+# Open Arduino serial (normal baud)
+arduino = serial.Serial('/dev/ttyACM0', 9600, write_timeout=0)
 
 axis_map = {
     ecodes.ABS_X: "LEFT_X",

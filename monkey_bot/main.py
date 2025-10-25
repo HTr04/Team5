@@ -1,3 +1,4 @@
+#update 2:52 version
 import depthai as dai
 # Attempt to import cv2; if unavailable, try to install opencv-python and re-import.
 try:

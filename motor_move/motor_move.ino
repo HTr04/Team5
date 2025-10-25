@@ -26,7 +26,7 @@ void loop() {
 
     int commaIndex = input.indexOf(',');
     if (commaIndex == -1) {
-      Serial.println("Invalid format. Use: motor1,motor2");
+      // malformed input, ignore
       return;
     }
 
@@ -34,21 +34,19 @@ void loop() {
     int m1Val = input.substring(0, commaIndex).toInt();
     int m2Val = input.substring(commaIndex + 1).toInt();
 
-    // Enforce mutual exclusion: run only the motor with larger absolute value
-    if (abs(m1Val) >= abs(m2Val) && m1Val != 0) {
-      setBTS7960(M1_RPWM, M1_LPWM, m1Val);
-      setBTS7960(M2_RPWM, M2_LPWM, 0);  // stop the other motor
-    } else if (m2Val != 0) {
-      setBTS7960(M2_RPWM, M2_LPWM, m2Val);
-      setBTS7960(M1_RPWM, M1_LPWM, 0);  // stop the other motor
-    } else {
-      // If both are zero, stop both
-      setBTS7960(M1_RPWM, M1_LPWM, 0);
-      setBTS7960(M2_RPWM, M2_LPWM, 0);
-    }
+    // Set both motors simultaneously (allow forward + turning)
+    setBTS7960(M1_RPWM, M1_LPWM, m1Val);
+    setBTS7960(M2_RPWM, M2_LPWM, m2Val);
 
-    Serial.print("M1: "); Serial.print(m1Val);
-    Serial.print(" | M2: "); Serial.println(m2Val);
+    // Rate-limit prints to avoid USB backpressure
+    static unsigned long lastPrintMs = 0;
+    const unsigned long PRINT_PERIOD_MS = 500;
+    unsigned long now = millis();
+    if (now - lastPrintMs >= PRINT_PERIOD_MS) {
+      Serial.print("M1: "); Serial.print(m1Val);
+      Serial.print(" | M2: "); Serial.println(m2Val);
+      lastPrintMs = now;
+    }
   }
 }
 

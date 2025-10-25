@@ -229,7 +229,7 @@ with dai.Pipeline(device) as pipeline:
         - Behavior: left/right wheels spin opposite directions to rotate in place.
         """
         if ser is None:
-            print("[CMD] skipped (no serial port open)")
+            # silently skip when no serial port is available
             return
 
         reason = ""
@@ -244,22 +244,29 @@ with dai.Pipeline(device) as pipeline:
                 m2 = 0
                 reason = "deadzone -> stop"
             else:
+                # turning component
                 pwm = clamp(int(args.kp_turn * s), -args.max_turn_pwm, args.max_turn_pwm)
-                # rotate-in-place: opposite directions
-                # Positive s -> turn RIGHT: left wheel forward (+), right wheel backward (-)
-                # Map to (m1,m2) consistent with Arduino: setBTS7960(M1, M2)
-                # Assuming m1 is right motor and inverted in Arduino (1*m1Val), we keep symmetry:
-                m1 = -pwm  # right motor
-                m2 = pwm   # left motor
-                reason = f"turn={'RIGHT' if s>0 else 'LEFT'} pwm={abs(pwm)}"
+
+                # small constant forward bias to always move slightly forward while turning
+                forward_bias = getattr(args, 'forward_bias', 30)
+
+                # compute motor outputs: turning is differential, forward_bias adds same sign to both
+                # keep sign conventions: m1 = right motor, m2 = left motor
+                m1 = -pwm + forward_bias
+                m2 = pwm + forward_bias
+                # clamp to safe overall range (allow forward_bias on top of max_turn_pwm)
+                overall_limit = args.max_turn_pwm + abs(int(forward_bias))
+                m1 = clamp(int(m1), -overall_limit, overall_limit)
+                m2 = clamp(int(m2), -overall_limit, overall_limit)
+                reason = f"turn={'RIGHT' if s>0 else 'LEFT'} pwm={abs(pwm)} fwd={forward_bias}"
 
         try:
             cmd = f"{m1},{m2}\n"
             ser.write(cmd.encode())
-            print(f"[CMD] m1={m1:+d}, m2={m2:+d} | {reason}")
-        except Exception as e:
-            # If serial fails mid-run, just log once-per error burst
-            print(f"Serial write error: {e}")
+            # keep logs minimal for SSH-friendly behavior
+        except Exception:
+            # ignore serial write errors during runtime
+            pass
 
     # Main loop
     pipeline.start()

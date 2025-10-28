@@ -62,8 +62,8 @@ def main():
                 print("Turn Left");     send(80, 160, ser)
                 if wait_or_break(1.5): break
 
-                print("Reverse");       send(-120, -120, ser)
-                if wait_or_break(1.0): break
+                print("Reverse");       send(-170, -170, ser)
+                if wait_or_break(10.0): break
 
                 print("Stop");          send(0, 0, ser)
                 if wait_or_break(0.5): break

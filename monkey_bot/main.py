@@ -82,7 +82,7 @@ with device_context as device:
     # Serial setup
     ser = None
     try:
-        ser = serial.Serial(args.serial_port, args.baud_rate=115200, timeout=0.1)
+        ser = serial.Serial(args.serial_port, args.baud_rate, timeout=0.1)
         time.sleep(2.0)
         print(f"Opened serial {args.serial_port} @ {args.baud_rate}")
     except Exception as e:

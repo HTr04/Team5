@@ -57,10 +57,10 @@ def main():
 
                 # Use biased turns so both wheels move (helps confirm motion)
                 print("Turn Right");    send(160, 80, ser)
-                if wait_or_break(1.5): break
+                if wait_or_break(10.0): break
 
                 print("Turn Left");     send(80, 160, ser)
-                if wait_or_break(1.5): break
+                if wait_or_break(10.0): break
 
                 print("Reverse");       send(-170, -170, ser)
                 if wait_or_break(10.0): break

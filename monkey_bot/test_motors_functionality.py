@@ -51,10 +51,8 @@ def main():
                 return False
 
             while True:
-                print("Stop");          send(0, 0, ser)
-                if wait_or_break(1.0): break
 
-                print("Forward");       send(150, 150, ser)
+                print("Going Forward");       send(150, 150, ser)
                 if wait_or_break(3.0): break
 
                 # Use biased turns so both wheels move (helps confirm motion)

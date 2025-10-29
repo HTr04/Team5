@@ -62,12 +62,28 @@ def main():
 
             while True:
                 
+                print("Right");       send(0,-170, ser)
+                if wait_or_break(1): break
+                print("Left");       send(-170, 0, ser)
+                if wait_or_break(1): break
 
-                print("ONLY RIGHT MOTOR");      send_ind1(170,ser)
-                if wait_or_break(10.0): break
+
+    except serial.SerialException as e:
+        print(f"Serial error: {e}")
+    finally:
+        # restore terminal no matter what
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        try:
+            with serial.Serial(PORT, BAUD, timeout=0.2) as ser:
+                ser.write(b"0,0\n")
+        except Exception:
+            pass
+        print("Motors stopped, serial closed.")
+
+        """"
+            while True:
                 
-                print("ONLY RIGHT MOTOR");      send_ind2(170,ser)
-                if wait_or_break(10.0): break
+              
 
                 print("Going Forward");       send(170, -170, ser)
                 if wait_or_break(10.0): break
@@ -96,6 +112,6 @@ def main():
         except Exception:
             pass
         print("Motors stopped, serial closed.")
-
+    """
 if __name__ == "__main__":
     main()

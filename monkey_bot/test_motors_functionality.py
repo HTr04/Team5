@@ -63,9 +63,9 @@ def main():
             while True:
                 
                 print("Right");       send(0,-170, ser)
-                if wait_or_break(1): break
-                print("Left");       send(-170, 0, ser)
-                if wait_or_break(1): break
+                if wait_or_break(.5): break
+                print("Left");       send(170, 0, ser)
+                if wait_or_break(.5): break
 
 
     except serial.SerialException as e:

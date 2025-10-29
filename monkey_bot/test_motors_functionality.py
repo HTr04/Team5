@@ -62,7 +62,7 @@ def main():
 
             while True:
                 
-                print("Right");       send(0,-160, ser)
+                print("Right");       send(0,-150, ser)
                 if wait_or_break(.05): break
                 print("Left");       send(170, 0, ser)
                 if wait_or_break(.05): break

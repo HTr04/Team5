@@ -9,6 +9,16 @@ def send(m1, m2, ser):
     ser.write(line.encode())
     print("->", line.strip())
 
+def send_ind1(m1, ser):
+    line = f"{m1}\n"
+    ser.write(line.encode())
+    print("->", line.strip())
+
+def send_ind2(m2, ser):
+    line = f"{m2}\n"
+    ser.write(line.encode())
+    print("->", line.strip())
+
 def kbhit_char():
     """Return a single char if available on stdin, else None (no sudo required)."""
     dr, _, _ = select.select([sys.stdin], [], [], 0)
@@ -53,6 +63,11 @@ def main():
             while True:
 
                 print("Going Forward");       send(170, -170, ser)
+                if wait_or_break(10.0): break
+
+                print("ONLY RIGHT MOTOR");      send_ind1(170,ser)
+                if wait_or_break(10.0): break
+                print("ONLY RIGHT MOTOR");      send_ind2(170,ser)
                 if wait_or_break(10.0): break
 
                 # Use biased turns so both wheels move (helps confirm motion)

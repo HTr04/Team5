@@ -61,13 +61,15 @@ def main():
                 return False
 
             while True:
-
-                print("Going Forward");       send(170, -170, ser)
-                if wait_or_break(10.0): break
+                
 
                 print("ONLY RIGHT MOTOR");      send_ind1(170,ser)
                 if wait_or_break(10.0): break
+                
                 print("ONLY RIGHT MOTOR");      send_ind2(170,ser)
+                if wait_or_break(10.0): break
+
+                print("Going Forward");       send(170, -170, ser)
                 if wait_or_break(10.0): break
 
                 # Use biased turns so both wheels move (helps confirm motion)

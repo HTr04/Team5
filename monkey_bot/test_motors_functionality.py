@@ -52,17 +52,17 @@ def main():
 
             while True:
 
-                print("Going Forward");       send(170, 170, ser)
+                print("Going Forward");       send(170, -170, ser)
                 if wait_or_break(10.0): break
 
                 # Use biased turns so both wheels move (helps confirm motion)
-                print("Turn Right, left motor ON");    send(0, 160, ser)
+                print("Turn Right, left motor ON");    send(0, -160, ser)
                 if wait_or_break(10.0): break
 
                 print("Turn Left, right motor ON");     send(160, 0, ser)
                 if wait_or_break(10.0): break
 
-                print("Reverse");       send(-170, -170, ser)
+                print("Reverse");       send(-170, 170, ser)
                 if wait_or_break(10.0): break
 
                 print("Stop");          send(0, 0, ser)
